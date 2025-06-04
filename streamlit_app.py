@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
-from GeneticAlgorithm import GeneticAlgorithmDEAP
-from GaussianSurface import GaussianSurface
+from algorithm.GeneticAlgorithm import GeneticAlgorithmDEAP
+from algorithm.GaussianSurface import GaussianSurface
 from utils import suggest_ga_params
 
 # --- Streamlit UI ---
