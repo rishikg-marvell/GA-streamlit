@@ -1,15 +1,14 @@
 import numpy as np
 
-
-def suggest_ga_params(bounds, step_sizes,max_population=1000, max_generations=100):
-        # Calculate number of possible values for each parameter
-        num_values = [
-            int((high - low) / step) + 1
-            for (low, high), step in zip(bounds, step_sizes)
-        ]
-        total_combinations = np.prod(num_values)
-        # Heuristic: population size is sqrt of total combinations, capped
-        population_size = min(int(np.sqrt(total_combinations)), max_population)
-        # Heuristic: generations is 2 * population size, capped
-        generations = min(int(2 * np.sqrt(population_size)), max_generations)
-        return population_size, generations
+def suggest_ga_params(bounds, step_sizes, max_population=1000, max_generations=100):
+    """
+    Population is set to the number of unique combinations possible given bounds and step sizes.
+    Generations is set to 2 * sqrt(population).
+    """
+    num_values = [
+        int((bounds[key][1] - bounds[key][0]) / step_sizes[key]) + 1
+        for key in bounds
+    ]
+    population_size = min(int(np.prod(num_values) / 10), max_population)
+    generations = min(int(2 * np.sqrt(population_size)), max_generations)
+    return population_size, generations

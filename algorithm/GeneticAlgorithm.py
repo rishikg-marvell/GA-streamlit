@@ -49,18 +49,16 @@ class GeneticAlgorithmDEAP:
 
     @staticmethod
     def grid_mutation(individual, step_sizes, bounds):
+        keys = list(bounds.keys())
         for i in range(len(individual)):
+            key = keys[i]
             if random.random() < 0.2:
                 direction = random.choice([-1, 1])
-                new_val = individual[i] + direction * step_sizes[i]
-                # Clamp to bounds and snap to grid
-                new_val = max(bounds[i][0], min(bounds[i][1], new_val))
-                # Snap to grid
-                new_val = round((new_val - bounds[i][0]) / step_sizes[i]) * step_sizes[i] + bounds[i][0]
+                new_val = individual[i] + direction * step_sizes[key]
+                new_val = max(bounds[key][0], min(bounds[key][1], new_val))
+                new_val = round((new_val - bounds[key][0]) / step_sizes[key]) * step_sizes[key] + bounds[key][0]
                 individual[i] = new_val
         return (individual,)
-    
-    
 
     def _setup_deap(self):
         if not hasattr(creator, "FitnessMin"):
@@ -68,14 +66,12 @@ class GeneticAlgorithmDEAP:
         if not hasattr(creator, "Individual"):
             creator.create("Individual", list, fitness=creator.FitnessMin)
         self.toolbox = base.Toolbox()
-        # Register per-parameter grid attribute
-        self.toolbox.register("attr_x", self.make_grid_attr(self.bounds[0][0], self.bounds[0][1], self.step_sizes[0]))
-        self.toolbox.register("attr_y", self.make_grid_attr(self.bounds[1][0], self.bounds[1][1], self.step_sizes[1]))
+        self.toolbox.register("attr_x", self.make_grid_attr(self.bounds['x'][0], self.bounds['x'][1], self.step_sizes['x']))
+        self.toolbox.register("attr_y", self.make_grid_attr(self.bounds['y'][0], self.bounds['y'][1], self.step_sizes['y']))
         self.toolbox.register("individual", tools.initCycle, creator.Individual, (self.toolbox.attr_x, self.toolbox.attr_y), n=1)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.individual)
         self.toolbox.register("evaluate", self._fitness_function)
         self.toolbox.register("mate", tools.cxUniform, indpb=0.5)
-        # Use custom grid mutation
         self.toolbox.register("mutate", self.grid_mutation, step_sizes=self.step_sizes, bounds=self.bounds)
         self.toolbox.register("select", tools.selTournament, tournsize=3)
 
@@ -102,8 +98,9 @@ class GeneticAlgorithmDEAP:
         return hof[0]
         
     def animate_population(self, X, Y, Z, save_path=None):
-        x_range = self.bounds[0][1] - self.bounds[0][0]
-        y_range = self.bounds[1][1] - self.bounds[1][0]
+        # Use dictionary keys for bounds
+        x_range = self.bounds['x'][1] - self.bounds['x'][0]
+        y_range = self.bounds['y'][1] - self.bounds['y'][0]
         aspect_ratio = x_range / y_range if y_range != 0 else 1
         fig_width = 10
         fig_height = max(5, fig_width / aspect_ratio)
@@ -116,8 +113,8 @@ class GeneticAlgorithmDEAP:
         contour = ax.contourf(X, Y, Z, levels=25, cmap='terrain')
         plt.colorbar(contour, ax=ax, label='Function Value')
         scat = ax.scatter([], [], color='red', s=marker_size, label='Population')
-        ax.set_xlim(self.bounds[0][0], self.bounds[0][1])
-        ax.set_ylim(self.bounds[1][0], self.bounds[1][1])
+        ax.set_xlim(self.bounds['x'][0], self.bounds['x'][1])
+        ax.set_ylim(self.bounds['y'][0], self.bounds['y'][1])
         ax.set_aspect('auto')
         ax.legend()
         def update(frame):

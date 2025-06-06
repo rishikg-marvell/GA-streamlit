@@ -1,1 +1,3 @@
 .venv
+scp -i srv-interop-data@c1usld-aichatbot01 -r GeneticAlgorithm/* srv-interop-data@10.195.108.30:~/intern_2025/python_src/GA
+eopto_nic_tap_scan_prbs_eye_prod.csv
