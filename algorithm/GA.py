@@ -37,6 +37,8 @@ class HBERGeneticAlgorithm:
         self.fitness_history = []
         self.best_history = []
         self.converged_generation = None
+        self.total_lookups = 0
+        self.lookup_cache = {}  # For caching lookups
         if seed is not None:
             random.seed(seed)
             np.random.seed(seed)
@@ -44,17 +46,23 @@ class HBERGeneticAlgorithm:
 
     def _fitness_function(self, individual):
         pre, main, post = individual
-        row = self.df_lookup[
-            (self.df_lookup['PRE'] == pre) &
-            (self.df_lookup['MAIN'] == main) &
-            (self.df_lookup['POST'] == post)
-        ]
-        if not row.empty:
-            avg_hber = row['avg_HBER'].values[0]
-            worst_hber = row['worst_HBER'].values[0]
+        key = (pre, main, post)
+        self.total_lookups += 1
+        if key in self.lookup_cache:
+            avg_hber, worst_hber = self.lookup_cache[key]
         else:
-            avg_hber = self.mean_avg_HBER
-            worst_hber = self.mean_worst_HBER
+            row = self.df_lookup[
+                (self.df_lookup['PRE'] == pre) &
+                (self.df_lookup['MAIN'] == main) &
+                (self.df_lookup['POST'] == post)
+            ]
+            if not row.empty:
+                avg_hber = row['avg_HBER'].values[0]
+                worst_hber = row['worst_HBER'].values[0]
+            else:
+                avg_hber = self.mean_avg_HBER
+                worst_hber = self.mean_worst_HBER
+            self.lookup_cache[key] = (avg_hber, worst_hber)
         # Lower HBER is better, so fitness is negative weighted sum
         fitness = -(self.fitness_weights[0] * avg_hber + self.fitness_weights[1] * worst_hber)
         return (fitness,)
@@ -112,6 +120,8 @@ class HBERGeneticAlgorithm:
         self.population_snapshots = []
         self.fitness_history = []
         self.best_history = []
+        self.total_lookups = 0
+        self.lookup_cache = {}
         converged_generation = None
         for gen in range(self.generations):
             offspring = algorithms.varAnd(pop, self.toolbox, cxpb=self.cxpb, mutpb=self.mutpb)
@@ -132,17 +142,22 @@ class HBERGeneticAlgorithm:
         return hof[0]
 
     def evaluate_point(self, pre, main, post):
-        row = self.df_lookup[
-            (self.df_lookup['PRE'] == pre) &
-            (self.df_lookup['MAIN'] == main) &
-            (self.df_lookup['POST'] == post)
-        ]
-        if not row.empty:
-            avg_hber = row['avg_HBER'].values[0]
-            worst_hber = row['worst_HBER'].values[0]
+        key = (pre, main, post)
+        if key in self.lookup_cache:
+            avg_hber, worst_hber = self.lookup_cache[key]
         else:
-            avg_hber = self.mean_avg_HBER
-            worst_hber = self.mean_worst_HBER
+            row = self.df_lookup[
+                (self.df_lookup['PRE'] == pre) &
+                (self.df_lookup['MAIN'] == main) &
+                (self.df_lookup['POST'] == post)
+            ]
+            if not row.empty:
+                avg_hber = row['avg_HBER'].values[0]
+                worst_hber = row['worst_HBER'].values[0]
+            else:
+                avg_hber = self.mean_avg_HBER
+                worst_hber = self.mean_worst_HBER
+            self.lookup_cache[key] = (avg_hber, worst_hber)
         return self.fitness_weights[0] * avg_hber + self.fitness_weights[1] * worst_hber
 
     def animate_population(self, save_path=None):

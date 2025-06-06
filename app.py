@@ -86,6 +86,14 @@ if df_new is not None:
         st.success(f"**Best Solution:** PRE={best[0]}, MAIN={best[1]}, POST={best[2]}")
         st.info(f"Fitness value: {hber_ga.evaluate_point(*best):.4e}")
 
+        # --- Lookup stats ---
+        num_unique_combinations = 1
+        for key in bounds:
+            num_unique_combinations *= int((bounds[key][1] - bounds[key][0]) / step_sizes[key]) + 1
+        st.markdown(f"**Total lookups performed:** {len(hber_ga.lookup_cache)}")
+        st.markdown(f"**Total possible unique combinations:** {num_unique_combinations}")
+        st.markdown(f"**Lookups saved:** {num_unique_combinations - len(hber_ga.lookup_cache)}")
+
         # --- Animated Population Evolution ---
         st.markdown("#### Population Evolution (3D Animation)")
         gif_bytes = hber_ga.animate_population()
